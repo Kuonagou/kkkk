@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">What\'s our Date</string>
+
+    <!-- HOME Screen -->
+    <string name="home_title">What\'s our Date</string>
+    <string name="home_settings">Settings</string>
+    <string name="home_account">Account</string>
+</resources>
