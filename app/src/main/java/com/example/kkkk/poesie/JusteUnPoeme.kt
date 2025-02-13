@@ -13,9 +13,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.kkkk.R
-import com.example.kkkk.data.PoemRepository
+import com.example.kkkk.data.PoemeRepository
 import com.example.kkkk.navigation.Screen
 import com.example.kkkk.ui.theme.PastelGreen
 
@@ -23,8 +24,10 @@ import com.example.kkkk.ui.theme.PastelGreen
 @Composable
 fun JusteUnPoeme(navHostController: NavHostController,id :Int) {
     val context = LocalContext.current
-    val repository = PoemRepository(context)
-    val poeme = repository.getThisPoeme(id)
+    val repository = remember { PoemeRepository(context) }
+    val factory = remember { PoemeViewModelFactory(repository) }
+    val viewModel: PoemeViewModel = viewModel(factory = factory)
+    val poeme = viewModel.getPoemeById(id)
 
     val backgroundColor = poeme?.color ?: PastelGreen // Assigne la couleur du poème ou une couleur par défaut
 
@@ -64,7 +67,7 @@ fun JusteUnPoeme(navHostController: NavHostController,id :Int) {
             if (poeme != null) {
                 Text(text = poeme.title, fontSize = 24.sp, color = Color.Black)
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(text = poeme.content, fontSize = 18.sp, color = Color.Black)
+                Text(text = poeme.description, fontSize = 18.sp, color = Color.Black)
             } else {
                 Text(
                     text = "Tous les poèmes ont déjà été tirés pour l'instant, mais d'autres seront ajoutés plus tard rien que pour toi !",

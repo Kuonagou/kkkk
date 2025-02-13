@@ -1,28 +1,27 @@
 package com.example.kkkk.stat
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color.Companion.Gray
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.material3.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color.Companion.Black
+import androidx.compose.ui.unit.dp
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 
 @Composable
 fun TimelineItem(
@@ -33,46 +32,57 @@ fun TimelineItem(
     isLast: Boolean,
     isLeftAligned: Boolean
 ) {
-    // Une ligne qui sépare chaque élément de la timeline
-    val lineColor = Color.Gray.copy(alpha = 0.3f)  // Couleur de la ligne
-    val circleSize = 8.dp  // Taille des cercles aux extrémités de la ligne
+    val lineColor = Color.Gray.copy(alpha = 0.3f)
+    val circleSize = 16.dp
+    val lineWidth = 2.dp
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(vertical = 16.dp, horizontal = 16.dp)
     ) {
-        // Lignes reliant les boîtes
-        if (!isLast) {
-            // Ligne reliant cet élément avec le suivant
+        // Timeline line
+        if (!isFirst) {
             Box(
                 modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .fillMaxHeight()
-                    .width(2.dp)
+                    .align(Alignment.TopCenter)
+                    .width(lineWidth)
+                    .height(24.dp)
+                    .offset(y = (-24).dp)
                     .background(lineColor)
             )
         }
 
-        // Cercles représentant la timeline
+        if (!isLast) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .width(lineWidth)
+                    .height(24.dp)
+                    .offset(y = 24.dp)
+                    .background(lineColor)
+            )
+        }
+
+        // Circle node
         Box(
             modifier = Modifier
-                .align(if (isLeftAligned) Alignment.CenterStart else Alignment.CenterEnd)
+                .align(Alignment.Center)
                 .size(circleSize)
                 .background(color, shape = CircleShape)
         )
 
-        // Contenu de chaque élément
+        // Content card
         Card(
             modifier = Modifier
                 .align(if (isLeftAligned) Alignment.CenterStart else Alignment.CenterEnd)
-                .padding(horizontal = 16.dp)
-                .fillMaxWidth(),
+                .padding(horizontal = 32.dp)
+                .width(700.dp),
             colors = CardDefaults.cardColors(
-                containerColor = color,
+                containerColor = color.copy(alpha = 0.8f),
                 contentColor = Color.Black
             ),
-            elevation = CardDefaults.cardElevation(8.dp) // Élévation de la Card
+            elevation = CardDefaults.cardElevation(4.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -81,14 +91,19 @@ fun TimelineItem(
             ) {
                 Text(
                     text = phrase,
-                    style = MaterialTheme.typography.bodyLarge, // Utilisation du style correct
+                    style = MaterialTheme.typography.titleMedium,
                     color = Color.Black
                 )
-                Text(
-                    text = date.toString(),
-                    style = MaterialTheme.typography.bodyMedium, // Utilisation du style correct
-                    color = Color.Gray
-                )
+
+                date?.let {
+                    val formatter = SimpleDateFormat("dd MMMM yyyy à HH:mm", Locale.FRENCH)
+                    Text(
+                        text = formatter.format(it),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.DarkGray,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
             }
         }
     }

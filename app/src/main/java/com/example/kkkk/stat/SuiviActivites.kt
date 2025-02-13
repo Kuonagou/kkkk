@@ -1,6 +1,5 @@
 package com.example.kkkk.stat
 
-import DateViewModel
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -16,25 +15,30 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.kkkk.data.DateRepository
 import com.example.kkkk.navigation.Screen
 import com.example.kkkk.ui.theme.PastelBlue
+import com.example.kkkk.date.DateViewModel
+import com.example.kkkk.date.DateViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SuiviActivites(navHostController: NavHostController) {
-    val viewModel: DateViewModel = viewModel()
-    val allDates by viewModel.allDates.observeAsState(initial = emptyList())
-    val completedActivities = allDates
-    System.out.println(completedActivities)
+    val context = LocalContext.current
+    val repository = DateRepository(context)
+    val factory = DateViewModelFactory(repository)
+    val viewModel: DateViewModel = viewModel(factory = factory)
+
+    val completedActivities by viewModel.completedActivities.observeAsState(initial = emptyList())
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -82,9 +86,11 @@ fun SuiviActivites(navHostController: NavHostController) {
             } else {
                 Text(
                     text = "Tu n'as complété aucune activité pour le moment quel dommage !",
-                    modifier = Modifier.padding(20.dp),
-                    fontSize = 16.sp,
-                    color = Color.Gray
+                    modifier = Modifier
+                        .padding(20.dp)
+                        .fillMaxSize(),
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
                 )
             }
         }

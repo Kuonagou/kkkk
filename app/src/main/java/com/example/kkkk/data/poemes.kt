@@ -1,19 +1,87 @@
 package com.example.kkkk.data
 
 import android.content.Context
-import android.content.SharedPreferences
 import androidx.compose.ui.graphics.Color
 import com.example.kkkk.ui.theme.*
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import java.io.File
 
-class PoemRepository(private val context: Context) {
-    private val poems = mutableListOf<Poeme>()
-    private val sharedPreferences: SharedPreferences =
-        context.getSharedPreferences("PoemPrefs", Context.MODE_PRIVATE)
+// Classe avec des propriétés sérialisables
+data class PoemeDto(
+    val id: Int,
+    val title: String,
+    val description: String,
+    val colorRed: Float,
+    val colorGreen: Float,
+    val colorBlue: Float,
+    val colorAlpha: Float,
+)
+
+// Extension function pour convertir entre DateActivity et DateActivityDto
+fun Poeme.toDto(): PoemeDto {
+    return PoemeDto(
+        id = this.id,
+        title = this.title,
+        description = this.description,
+        colorRed = this.color.red,
+        colorGreen = this.color.green,
+        colorBlue = this.color.blue,
+        colorAlpha = this.color.alpha,
+    )
+}
+
+fun PoemeDto.toPoemeActivity(): Poeme {
+    return Poeme(
+        id = this.id,
+        title = this.title,
+        description = this.description,
+        color = Color(this.colorRed, this.colorGreen, this.colorBlue, this.colorAlpha)
+    )
+}
+class PoemeRepository(private val context: Context) {
+    private val poemeActivity = mutableListOf<Poeme>()
+    private val takenPoemIds = mutableListOf<Int>() // Liste des IDs pris
+    private val gson: Gson
+    private val jsonFile: File
+    private val sharedPreferences = context.getSharedPreferences("PoemePrefs", Context.MODE_PRIVATE)
+
 
     init {
-        initializePoems()
+        // Création d'un Gson personnalisé pour gérer Color
+        gson = GsonBuilder().create()
+        jsonFile = File(context.filesDir, "poeme.json")
+        loadDatesFromJson()
     }
-    private fun initializePoems() {
+
+    private fun loadDatesFromJson() {
+        if (jsonFile.exists()) {
+            try {
+                val json = jsonFile.readText()
+                val dtoList = gson.fromJson(json, Array<PoemeDto>::class.java)
+                poemeActivity.clear()
+                poemeActivity.addAll(dtoList.map { it.toPoemeActivity()})
+            } catch (e: Exception) {
+                e.printStackTrace()
+                initializeDates() // Fallback to initialization if JSON loading fails
+            }
+        } else {
+            initializeDates()
+        }
+    }
+
+    private fun saveDatesToJson() {
+        try {
+            val dtoList = poemeActivity.map { it.toDto() }
+            val json = gson.toJson(dtoList)
+            jsonFile.writeText(json)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    // Initialisation des dates si elles sont vides
+    private fun initializeDates() {
     if (getAllPoems().isEmpty()) {
             savePoeme(
                 0,
@@ -105,37 +173,53 @@ class PoemRepository(private val context: Context) {
         }
     }
 
-fun getAllPoems(): List<Poeme> = poems
-
-fun savePoeme(id: Int, title: String, content: String, color: Color) {
-    poems.add(Poeme(id, title, content, color))
-}
-
-fun getRandomPoem(): Poeme? {
-    if (poems.isEmpty()) return null
-
-    val availablePoems = poems.filter { it.id !in getDrawnPoems() }
-    if (availablePoems.isEmpty()) return null // Tous les poèmes ont été tirés
-
-    val randomPoem = availablePoems.random()
-    addPoemToDrawnList(randomPoem.id)
-    return randomPoem
-}
-    fun getThisPoeme(id:Int): Poeme {
-        return poems[id];
+    // Ajouter une date à la liste
+    fun savePoeme(id: Int, title: String, description: String, color: Color) {
+        poemeActivity.add(Poeme(id, title, description, color))
+        saveDatesToJson() // Sauvegarde après modification
     }
 
-private fun addPoemToDrawnList(poemId: Int) {
-    val drawnList = getDrawnPoems().toMutableSet()
-    drawnList.add(poemId)
-    sharedPreferences.edit().putStringSet("drawnPoems", drawnList.map { it.toString() }.toSet()).apply()
+    // Récupérer toutes les dates
+    fun getAllPoems(): List<Poeme> = poemeActivity
+
+    // Récupérer une date par son ID
+    fun getPoemeById(id: Int): Poeme {
+        return poemeActivity.firstOrNull { it.id == id }
+            ?: throw IllegalArgumentException("Date not found with id: $id")
+    }
+
+    fun getRandomAvailablePoem(): Poeme? {
+        val allPoems = getAllPoems()
+        val takenPoemIds = getTakenPoemIds()
+
+        val availablePoems = allPoems.filter { it.id !in takenPoemIds }
+        return availablePoems.randomOrNull()
+    }
+
+    fun markPoemeAsTaken(id: Int, date: String) {
+        val takenPoems = getTakenPoemIds().toMutableSet()
+        takenPoems.add(id)
+
+        sharedPreferences.edit()
+            .putStringSet("takenPoemIds", takenPoems.map { it.toString() }.toSet())
+            .putString("lastDrawDate", date) // ✅ Enregistrement de la date du dernier tirage
+            .apply()
+    }
+
+    fun getTakenPoemIds(): List<Int> {
+        return sharedPreferences.getStringSet("takenPoemIds", emptySet())
+            ?.mapNotNull { it.toIntOrNull() }
+            ?: emptyList()
+    }
+
+    fun getTakenPoems(): List<Poeme> {
+        val takenIds = getTakenPoemIds()
+        return getAllPoems().filter { it.id in takenIds }
+    }
+
+    fun getLastDrawDate(): String? {
+        return sharedPreferences.getString("lastDrawDate", null)
+    }
 }
 
-fun getDrawnPoems(): List<Int> {
-    return sharedPreferences.getStringSet("drawnPoems", emptySet())
-        ?.mapNotNull { it.toIntOrNull() }
-        ?: emptyList()
-}
-}
-
-data class Poeme(val id: Int, val title: String, val content: String, val color: Color)
+data class Poeme(val id: Int, val title: String, val description: String, val color: Color)

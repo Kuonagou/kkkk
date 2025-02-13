@@ -1,6 +1,5 @@
 package com.example.kkkk.date
 
-import DateViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -17,12 +16,16 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.kkkk.R
+import com.example.kkkk.data.DateRepository
 import com.example.kkkk.navigation.Screen
 import java.util.Calendar
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CeDate(phraseId: Int, navHostController: NavHostController) {
-    val viewModel: DateViewModel = viewModel()
+    val context = LocalContext.current
+    val repository = remember { DateRepository(context) }
+    val factory = remember { DateViewModelFactory(repository) }
+    val viewModel: DateViewModel = viewModel(factory = factory)
 
     // Charger la date sélectionnée
     LaunchedEffect(phraseId) {

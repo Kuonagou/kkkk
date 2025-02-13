@@ -1,14 +1,12 @@
 package com.example.kkkk.poesie
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -16,9 +14,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.kkkk.R
-import com.example.kkkk.data.PoemRepository
+import com.example.kkkk.data.PoemeRepository
 import com.example.kkkk.navigation.Screen
 import com.example.kkkk.ui.theme.PastelGreen
 
@@ -26,8 +25,10 @@ import com.example.kkkk.ui.theme.PastelGreen
 @Composable
 fun TesPoemes(navHostController: NavHostController) {
     val context = LocalContext.current
-    val repository = PoemRepository(context)
-    val drawnPoems = repository.getDrawnPoems().mapNotNull { id -> repository.getAllPoems().find { it.id == id } }
+    val repository = remember { PoemeRepository(context) }
+    val factory = remember { PoemeViewModelFactory(repository) }
+    val viewModel: PoemeViewModel = viewModel(factory = factory)
+    val drawnPoems by viewModel.drawnPoems.observeAsState(emptyList())
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),

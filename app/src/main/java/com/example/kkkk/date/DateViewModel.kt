@@ -1,54 +1,51 @@
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+package com.example.kkkk.date
+
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import com.example.kkkk.data.DateActivity
 import com.example.kkkk.data.DateRepository
+import kotlinx.coroutines.launch
 import java.util.Date
 
-class DateViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository: DateRepository = DateRepository(application.applicationContext)
-
+class DateViewModel(private val repository: DateRepository) : ViewModel() {
     private val _allDates = MutableLiveData<List<DateActivity>>()
     val allDates: LiveData<List<DateActivity>> = _allDates
 
-    private val _selectedDate = MutableLiveData<DateActivity?>()
-    val selectedDate: LiveData<DateActivity?> = _selectedDate
-
-    init {
-        refreshAllDates()
+    // LiveData pour les activités complétées, triées par date
+    val completedActivities: LiveData<List<DateActivity>> = allDates.map{ dates ->
+        dates.filter { it.dateDudate != null }
+            .sortedBy { it.dateDudate }
     }
 
-    fun refreshAllDates() {
+    // LiveData pour la date sélectionnée
+    private val _selectedDate = MutableLiveData<DateActivity>()
+    val selectedDate: LiveData<DateActivity> = _selectedDate
+
+    init {
+        loadAllDates()
+    }
+
+    private fun loadAllDates() {
         _allDates.value = repository.getAllDates()
     }
 
     fun getDateById(id: Int) {
         try {
-            val date = repository.getDateById(id)
-            _selectedDate.value = date
-        } catch (e: IllegalArgumentException) {
+            _selectedDate.value = repository.getDateById(id)
+        } catch (e: Exception) {
             _selectedDate.value = null
         }
     }
 
-    fun updateDateDate(id: Int, dateDate: Date?) {
-        val date = try {
-            repository.getDateById(id)
-        } catch (e: IllegalArgumentException) {
-            null
-        }
-
-        date?.let {
-            repository.saveDateDate(id, it.title, it.description, it.color, dateDate)
-            refreshAllDates()
-
-            // Rafraîchir la date sélectionnée si nécessaire
-            if (_selectedDate.value?.id == id) {
-                getDateById(id)
-            }
+    fun updateDateDate(id: Int, newDate: Date) {
+        val currentDate = _selectedDate.value
+        if (currentDate != null) {
+            repository.saveDateDate(id, currentDate.title, currentDate.description, currentDate.color, newDate)
+            getDateById(id)
+            loadAllDates()
         }
     }
 }

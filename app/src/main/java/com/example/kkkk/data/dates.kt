@@ -3,18 +3,89 @@ package com.example.kkkk.data
 import android.content.Context
 import androidx.compose.ui.graphics.Color
 import com.example.kkkk.ui.theme.*
+import com.google.gson.*
+import java.io.File
+import java.lang.reflect.Type
 import java.util.Date
+
+// Classe avec des propriétés sérialisables
+data class DateActivityDto(
+    val id: Int,
+    val title: String,
+    val description: String,
+    val colorRed: Float,
+    val colorGreen: Float,
+    val colorBlue: Float,
+    val colorAlpha: Float,
+    val dateDudate: Long?
+)
+
+// Extension function pour convertir entre DateActivity et DateActivityDto
+fun DateActivity.toDto(): DateActivityDto {
+    return DateActivityDto(
+        id = this.id,
+        title = this.title,
+        description = this.description,
+        colorRed = this.color.red,
+        colorGreen = this.color.green,
+        colorBlue = this.color.blue,
+        colorAlpha = this.color.alpha,
+        dateDudate = this.dateDudate?.time
+    )
+}
+
+fun DateActivityDto.toDateActivity(): DateActivity {
+    return DateActivity(
+        id = this.id,
+        title = this.title,
+        description = this.description,
+        color = Color(this.colorRed, this.colorGreen, this.colorBlue, this.colorAlpha),
+        dateDudate = this.dateDudate?.let { Date(it) }
+    )
+}
 
 class DateRepository(private val context: Context) {
     private val dateActivities = mutableListOf<DateActivity>()
+    private val gson: Gson
+    private val jsonFile: File
 
     init {
-        initializeDates()
+        // Création d'un Gson personnalisé pour gérer Color
+        gson = GsonBuilder().create()
+        jsonFile = File(context.filesDir, "dates.json")
+        loadDatesFromJson()
+    }
+
+    private fun loadDatesFromJson() {
+        if (jsonFile.exists()) {
+            try {
+                val json = jsonFile.readText()
+                val dtoList = gson.fromJson(json, Array<DateActivityDto>::class.java)
+                dateActivities.clear()
+                dateActivities.addAll(dtoList.map { it.toDateActivity() })
+            } catch (e: Exception) {
+                e.printStackTrace()
+                initializeDates() // Fallback to initialization if JSON loading fails
+            }
+        } else {
+            initializeDates()
+        }
+    }
+
+    private fun saveDatesToJson() {
+        try {
+            val dtoList = dateActivities.map { it.toDto() }
+            val json = gson.toJson(dtoList)
+            jsonFile.writeText(json)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     // Initialisation des dates si elles sont vides
     private fun initializeDates() {
-        if (getAllDates().isEmpty()) {
+        if (dateActivities.isEmpty()) {
+            // Même code d'initialisation que tu avais déjà
             saveDate(
                 1,
                 "Un date peinture 🎨",
@@ -122,17 +193,19 @@ class DateRepository(private val context: Context) {
 
     // Ajouter une date à la liste
     fun saveDate(id: Int, title: String, description: String, color: Color, dateDudate: Date?) {
-        dateActivities.add(DateActivity(id, title, description, color,dateDudate))
+        dateActivities.add(DateActivity(id, title, description, color, dateDudate))
+        saveDatesToJson() // Sauvegarde après modification
     }
+
     fun saveDateDate(id: Int, title: String, description: String, color: Color, dateDudate: Date?) {
         val existingActivity = dateActivities.firstOrNull { it.id == id }
         System.out.println("appel de save date "+existingActivity)
         if (existingActivity != null) {
-            // Si l'activité existe déjà, mettre à jour la dateDudate
             val index = dateActivities.indexOf(existingActivity)
-            val updatedActivity = existingActivity.copy(dateDudate = dateDudate) // Crée une nouvelle instance avec la date mise à jour
-            dateActivities[index] = updatedActivity // Remplace l'élément dans la liste
+            val updatedActivity = existingActivity.copy(dateDudate = dateDudate)
+            dateActivities[index] = updatedActivity
             System.out.println("mise à jour date " + updatedActivity)
+            saveDatesToJson() // Sauvegarde après modification
         }
     }
 
@@ -146,11 +219,11 @@ class DateRepository(private val context: Context) {
     }
 }
 
-// Classe qui représente une activité de date
+// La classe DateActivity reste inchangée
 data class DateActivity(
     val id: Int,
     val title: String,
     val description: String,
     val color: Color,
-    val dateDudate : Date?
+    val dateDudate: Date?
 )

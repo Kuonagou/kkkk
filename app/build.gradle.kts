@@ -76,6 +76,7 @@ dependencies {
     implementation("com.airbnb.android:lottie-compose:5.2.0")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.cardview:cardview:1.0.0")
+    implementation("com.google.code.gson:gson:2.10.1")
 
     // Map Google
     implementation("com.google.android.gms:play-services-location:21.0.1")
@@ -87,4 +88,5 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.test)
     implementation(libs.koin.androidx.compose)
+    implementation(kotlin("script-runtime"))
 }
